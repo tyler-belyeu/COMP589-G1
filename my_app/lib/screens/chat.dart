@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:my_app/user_menu.dart';
 
 class Chat extends StatelessWidget {
-  const Chat({super.key});
+  Chat({super.key});
 
-  final String _groupName = "Group A";
+  final String _groupName = UserMenu().getCurrentGroup();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: UserMenu(),
       appBar: AppBar(
-        title: Text(_groupName),
+        title: Text("COMP 589"),
         centerTitle: true,
         backgroundColor: Colors.black,
       ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:my_app/auth.dart';
+import 'package:my_app/main.dart';
+import 'package:my_app/services/auth.dart';
+import 'package:my_app/services/database.dart';
 
 // Disables over-scroll glow effect that normally happens
 // when you try to scroll past the end of a list view
@@ -14,6 +16,14 @@ class NoGlow extends ScrollBehavior {
 
 class UserMenu extends StatelessWidget {
   UserMenu({super.key});
+
+  final String _currentGroup = 'Group';
+  String _newGroupName = '';
+  final TextEditingController _alertDialogController = TextEditingController();
+
+  String getCurrentGroup() {
+    return _currentGroup;
+  }
 
   final User? user = Auth().currentUser;
 
@@ -66,6 +76,82 @@ class UserMenu extends StatelessWidget {
         });
   }
 
+  void _alertGetNewGroupName() {
+    showDialog(
+      context: navigatorKey.currentContext!,
+      builder: (context) => AlertDialog(
+        title: const Text("Enter Group Name:"),
+        content: TextField(
+          onChanged: (value) {},
+          controller: _alertDialogController,
+          decoration: const InputDecoration(hintText: "Group Name"),
+        ),
+        actions: [
+          MaterialButton(
+            color: Colors.red,
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pop(context);
+              _alertDialogController.text = '';
+            },
+            child: const Text('Cancel'),
+          ),
+          MaterialButton(
+            color: Colors.black,
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pop(context);
+              _createNewGroup();
+              _alertDialogController.text = '';
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _createNewGroup() async {
+    DatabaseService db = DatabaseService(uid: user!.uid);
+    var usersList = [user!.uid];
+    String groupID =
+        await db.createGroup(user!.uid, _alertDialogController.text, usersList);
+    List groups = await db.getUserData("groups");
+    // now append groupID to user's groupsList and updateUserData()
+    print(groups);
+    groups.add(groupID);
+    db.updateUserData(groups);
+  }
+
+  Future<List<Widget>> _getGroupTiles() async {
+    DatabaseService db = DatabaseService(uid: user!.uid);
+    List groups = await db.getUserData("groups");
+
+    List<ListTile> groupTiles = [];
+    for (int i = 0; i < groups.length; i++) {
+      ListTile tile = ListTile(
+          title: Text(
+        await db.getGroupsData(groups[i], 'name'),
+        style: const TextStyle(fontSize: 24.0),
+      ));
+      groupTiles.add(tile);
+    }
+
+    ListTile createNewGroupTile = ListTile(
+      leading: const Icon(
+        Icons.add,
+      ),
+      title: const Text(
+        "Create New",
+        style: TextStyle(fontSize: 24.0),
+      ),
+      onTap: _alertGetNewGroupName,
+    );
+    groupTiles.add(createNewGroupTile);
+
+    return groupTiles;
+  }
+
   Drawer _loggedInDrawer() {
     return Drawer(
       child: Column(
@@ -94,70 +180,21 @@ class UserMenu extends StatelessWidget {
           Expanded(
             child: ScrollConfiguration(
               behavior: NoGlow(),
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: const [
-                  ListTile(
-                    title: Text(
-                      "Group A",
-                      style: TextStyle(fontSize: 24.0),
-                    ),
-                    textColor: Colors.blue,
-                  ),
-                  ListTile(
-                    title: Text(
-                      "Group B",
-                      style: TextStyle(fontSize: 24.0),
-                    ),
-                    textColor: Colors.red,
-                  ),
-                  ListTile(
-                    title: Text(
-                      "Group C",
-                      style: TextStyle(fontSize: 24.0),
-                    ),
-                    textColor: Colors.green,
-                  ),
-                  ListTile(
-                    title: Text(
-                      "Group D",
-                      style: TextStyle(fontSize: 24.0),
-                    ),
-                    textColor: Colors.black,
-                  ),
-                  ListTile(
-                    title: Text(
-                      "Group E",
-                      style: TextStyle(fontSize: 24.0),
-                    ),
-                    textColor: Colors.yellow,
-                  ),
-                  ListTile(
-                    title: Text(
-                      "Group F",
-                      style: TextStyle(fontSize: 24.0),
-                    ),
-                    textColor: Colors.purple,
-                  ),
-                  ListTile(
-                    title: Text(
-                      "Group G",
-                      style: TextStyle(fontSize: 24.0),
-                    ),
-                    textColor: Colors.teal,
-                  ),
-                  ListTile(
-                    leading: Icon(
-                      Icons.add,
-                      color: Colors.orange,
-                    ),
-                    title: Text(
-                      "Create New",
-                      style: TextStyle(fontSize: 24.0),
-                    ),
-                    textColor: Colors.orange,
-                  ),
-                ],
+              child: FutureBuilder(
+                future: _getGroupTiles(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return ListView(
+                      padding: EdgeInsets.zero,
+                      children: snapshot.data!,
+                    );
+                  } else {
+                    return ListView(
+                      padding: EdgeInsets.zero,
+                      children: const [],
+                    );
+                  }
+                },
               ),
             ),
           ),
@@ -177,8 +214,6 @@ class UserMenu extends StatelessWidget {
               }
             },
           ),
-          // Auth().authStateChanges != null ? _logOutTile() : _logInTile(),
-          // user != null ? _logOutTile() : _logInTile(),
         ],
       ),
     );
@@ -233,8 +268,6 @@ class UserMenu extends StatelessWidget {
               }
             },
           ),
-          // Auth().authStateChanges != null ? _logOutTile() : _logInTile(),
-          // user != null ? _logOutTile() : _logInTile(),
         ],
       ),
     );
@@ -254,120 +287,5 @@ class UserMenu extends StatelessWidget {
         },
       ),
     );
-    // return Drawer(
-    //   child: Column(
-    //     children: [
-    //       UserAccountsDrawerHeader(
-    //         accountName: _userName(),
-    //         accountEmail: _userEmail(),
-    //         currentAccountPicture: CircleAvatar(
-    //           child: ClipOval(
-    //             child: Image.network(
-    //               "https://upload.wikimedia.org/wikipedia/commons/c/cc/CSUN_Seal.png",
-    //               width: 90,
-    //               height: 90,
-    //               fit: BoxFit.cover,
-    //             ),
-    //           ),
-    //         ),
-    //         decoration: const BoxDecoration(
-    //             color: Colors.blue,
-    //             image: DecorationImage(
-    //               image: NetworkImage(
-    //                   "https://thestreamable.com/media/pages/sports/ncaa-mens-basketball/cal-state-northridge-matadors/4818166150-1576040064/cal-state-northridge-matadors-banner.png"),
-    //               fit: BoxFit.cover,
-    //             )),
-    //       ),
-    //       Expanded(
-    //         child: ScrollConfiguration(
-    //           behavior: NoGlow(),
-    //           child: ListView(
-    //             padding: EdgeInsets.zero,
-    //             children: const [
-    //               ListTile(
-    //                 title: Text(
-    //                   "Group A",
-    //                   style: TextStyle(fontSize: 24.0),
-    //                 ),
-    //                 textColor: Colors.blue,
-    //               ),
-    //               ListTile(
-    //                 title: Text(
-    //                   "Group B",
-    //                   style: TextStyle(fontSize: 24.0),
-    //                 ),
-    //                 textColor: Colors.red,
-    //               ),
-    //               ListTile(
-    //                 title: Text(
-    //                   "Group C",
-    //                   style: TextStyle(fontSize: 24.0),
-    //                 ),
-    //                 textColor: Colors.green,
-    //               ),
-    //               ListTile(
-    //                 title: Text(
-    //                   "Group D",
-    //                   style: TextStyle(fontSize: 24.0),
-    //                 ),
-    //                 textColor: Colors.black,
-    //               ),
-    //               ListTile(
-    //                 title: Text(
-    //                   "Group E",
-    //                   style: TextStyle(fontSize: 24.0),
-    //                 ),
-    //                 textColor: Colors.yellow,
-    //               ),
-    //               ListTile(
-    //                 title: Text(
-    //                   "Group F",
-    //                   style: TextStyle(fontSize: 24.0),
-    //                 ),
-    //                 textColor: Colors.purple,
-    //               ),
-    //               ListTile(
-    //                 title: Text(
-    //                   "Group G",
-    //                   style: TextStyle(fontSize: 24.0),
-    //                 ),
-    //                 textColor: Colors.teal,
-    //               ),
-    //               ListTile(
-    //                 leading: Icon(
-    //                   Icons.add,
-    //                   color: Colors.orange,
-    //                 ),
-    //                 title: Text(
-    //                   "Create New",
-    //                   style: TextStyle(fontSize: 24.0),
-    //                 ),
-    //                 textColor: Colors.orange,
-    //               ),
-    //             ],
-    //           ),
-    //         ),
-    //       ),
-    //       const Divider(),
-    //       const ListTile(
-    //         leading: Icon(Icons.settings),
-    //         title: Text("Settings"),
-    //         onTap: null,
-    //       ),
-    //       StreamBuilder<User?>(
-    //         stream: Auth().authStateChanges,
-    //         builder: (context, snapshot) {
-    //           if (snapshot.hasData) {
-    //             return _logOutTile();
-    //           } else {
-    //             return _logInTile();
-    //           }
-    //         },
-    //       ),
-    //       // Auth().authStateChanges != null ? _logOutTile() : _logInTile(),
-    //       // user != null ? _logOutTile() : _logInTile(),
-    //     ],
-    //   ),
-    // );
   }
 }

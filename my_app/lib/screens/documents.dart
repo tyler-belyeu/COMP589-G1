@@ -9,7 +9,7 @@ class Docs extends StatelessWidget {
     return Scaffold(
       drawer: UserMenu(),
       appBar: AppBar(
-        title: const Text("Group Name"),
+        title: const Text("COMP 589"),
         centerTitle: true,
         backgroundColor: Colors.black,
       ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
-import 'package:my_app/Chat/chat.dart';
-import 'package:my_app/Documents/documents.dart';
-import 'package:my_app/Links/links.dart';
+import 'package:my_app/screens/chat.dart';
+import 'package:my_app/screens/documents.dart';
+import 'package:my_app/screens/links.dart';
 
 class Nav extends StatefulWidget {
   const Nav({super.key});
@@ -15,7 +15,7 @@ class Nav extends StatefulWidget {
 class _NavState extends State<Nav> {
   int _selectedIndex = 0;
   final List<Widget> _widgetOptions = <Widget>[
-    const Chat(),
+    Chat(),
     const Docs(),
     const Links()
   ];

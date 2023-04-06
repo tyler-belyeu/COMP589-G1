@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:my_app/services/database.dart';
 
 class Auth {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -22,24 +23,20 @@ class Auth {
       idToken: googleAuth?.idToken,
     );
 
-    print(googleUser);
+    // Once signed in, get the UserCredential
+    // return await FirebaseAuth.instance.signInWithCredential(credential);
+    final result = await FirebaseAuth.instance.signInWithCredential(credential);
 
-    // Once signed in, return the UserCredential
-    return await FirebaseAuth.instance.signInWithCredential(credential);
+    // create new firestore document for new users with their uid
+    User? user = result.user;
+    // DatabaseService db = DatabaseService(uid: user!.uid);
+    // List userGroups = await db.getUserData('groups');
+    // await db.updateUserData(userGroups == null ? userGroups : []);
+    // await db.updateUserData([]);
+    await DatabaseService(uid: user!.uid).updateUserData([]);
+
+    return result;
   }
-
-  // Future<UserCredential> signInWithGoogle() async {
-  //   final GoogleSignInAccount? googleUser =
-  //       await GoogleSignIn(scopes: <String>["email"]).signIn();
-
-  //   final GoogleSignInAuthentication googleAuth =
-  //       await googleUser!.authentication;
-
-  //   final credential = GoogleAuthProvider.credential(
-  //       accessToken: googleAuth.accessToken, idToken: googleAuth.idToken);
-
-  //   return await FirebaseAuth.instance.signInWithCredential(credential);
-  // }
 
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
