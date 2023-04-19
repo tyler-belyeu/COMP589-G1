@@ -29,11 +29,9 @@ class Auth {
 
     // create new firestore document for new users with their uid
     User? user = result.user;
-    // DatabaseService db = DatabaseService(uid: user!.uid);
-    // List userGroups = await db.getUserData('groups');
-    // await db.updateUserData(userGroups == null ? userGroups : []);
-    // await db.updateUserData([]);
-    await DatabaseService(uid: user!.uid).updateUserData([]);
+    DatabaseService db = DatabaseService(uid: user!.uid);
+    List? userGroups = await db.getUserData('groups');
+    await db.updateUserData(userGroups);
 
     return result;
   }

@@ -14,11 +14,17 @@ class NoGlow extends ScrollBehavior {
   }
 }
 
-class UserMenu extends StatelessWidget {
+class UserMenu extends StatefulWidget {
   UserMenu({super.key});
 
-  final String _currentGroup = 'Group';
-  String _newGroupName = '';
+  @override
+  State<UserMenu> createState() => _UserMenuState();
+}
+
+class _UserMenuState extends State<UserMenu> {
+  String _currentGroup = 'Group';
+  int _numGroups = 0;
+
   final TextEditingController _alertDialogController = TextEditingController();
 
   String getCurrentGroup() {
@@ -63,7 +69,7 @@ class UserMenu extends StatelessWidget {
         ),
         title: const Text("Sign in with Google"),
         onTap: () {
-          Auth().signInWithGoogle();
+          signInWithGoogle();
         });
   }
 
@@ -111,6 +117,12 @@ class UserMenu extends StatelessWidget {
     );
   }
 
+  void _tileTapped(String name) {
+    setState(() {
+      _currentGroup = name;
+    });
+  }
+
   Future<void> _createNewGroup() async {
     DatabaseService db = DatabaseService(uid: user!.uid);
     var usersList = [user!.uid];
@@ -118,9 +130,11 @@ class UserMenu extends StatelessWidget {
         await db.createGroup(user!.uid, _alertDialogController.text, usersList);
     List groups = await db.getUserData("groups");
     // now append groupID to user's groupsList and updateUserData()
-    print(groups);
     groups.add(groupID);
     db.updateUserData(groups);
+    setState(() {
+      _numGroups += 1;
+    });
   }
 
   Future<List<Widget>> _getGroupTiles() async {
@@ -129,11 +143,16 @@ class UserMenu extends StatelessWidget {
 
     List<ListTile> groupTiles = [];
     for (int i = 0; i < groups.length; i++) {
+      String groupName = await db.getGroupsData(groups[i], 'name');
       ListTile tile = ListTile(
-          title: Text(
-        await db.getGroupsData(groups[i], 'name'),
-        style: const TextStyle(fontSize: 24.0),
-      ));
+        title: Text(
+          groupName,
+          style: const TextStyle(fontSize: 24.0),
+        ),
+        onTap: () {
+          _tileTapped(groupName);
+        },
+      );
       groupTiles.add(tile);
     }
 
@@ -204,16 +223,7 @@ class UserMenu extends StatelessWidget {
             title: Text("Settings"),
             onTap: null,
           ),
-          StreamBuilder<User?>(
-            stream: Auth().authStateChanges,
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return _logOutTile();
-              } else {
-                return _logInTile();
-              }
-            },
-          ),
+          _logOutTile(),
         ],
       ),
     );
@@ -258,16 +268,7 @@ class UserMenu extends StatelessWidget {
             title: Text("Settings"),
             onTap: null,
           ),
-          StreamBuilder<User?>(
-            stream: Auth().authStateChanges,
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return _logOutTile();
-              } else {
-                return _logInTile();
-              }
-            },
-          ),
+          _logInTile(),
         ],
       ),
     );

@@ -20,8 +20,12 @@ class DatabaseService {
   Future<dynamic> getUserData(String key) async {
     return userCollection.doc(uid).get().then(
       (DocumentSnapshot doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return data[key];
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          return data[key];
+        } else {
+          return [];
+        }
       },
       onError: (e) => print("Error getting document: $e"),
     );

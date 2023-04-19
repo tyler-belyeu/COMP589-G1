@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:my_app/user_menu.dart';
 
-class Chat extends StatelessWidget {
+class Chat extends StatefulWidget {
   Chat({super.key});
 
-  final String _groupName = UserMenu().getCurrentGroup();
+  @override
+  State<Chat> createState() => _ChatState();
+}
+
+class _ChatState extends State<Chat> {
+  // final String _groupName = UserMenu().getCurrentGroup();
+  final String _groupName = "COMP 589";
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: UserMenu(),
       appBar: AppBar(
-        title: Text("COMP 589"),
+        title: Text(_groupName),
         centerTitle: true,
         backgroundColor: Colors.black,
       ),
