@@ -145,6 +145,10 @@ class _UserMenuState extends State<UserMenu> {
     for (int i = 0; i < groups.length; i++) {
       String groupName = await db.getGroupsData(groups[i], 'name');
       ListTile tile = ListTile(
+        leading: const Icon(
+          Icons.group,
+          color: Colors.black,
+        ),
         title: Text(
           groupName,
           style: const TextStyle(fontSize: 24.0),
@@ -159,6 +163,7 @@ class _UserMenuState extends State<UserMenu> {
     ListTile createNewGroupTile = ListTile(
       leading: const Icon(
         Icons.add,
+        color: Colors.black,
       ),
       title: const Text(
         "Create New",
