@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/models/group.dart';
 import 'package:my_app/user_menu.dart';
 
 class Links extends StatefulWidget {
@@ -9,12 +10,22 @@ class Links extends StatefulWidget {
 }
 
 class _LinksState extends State<Links> {
+  String _groupName = Group.groupName;
+
+  refreshTitle() {
+    setState(() {
+      _groupName = Group.groupName;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: UserMenu(),
+      drawer: UserMenu(
+        notifyScreen: refreshTitle,
+      ),
       appBar: AppBar(
-        title: const Text("COMP 589"),
+        title: Text(_groupName),
         centerTitle: true,
         backgroundColor: Colors.black,
       ),
