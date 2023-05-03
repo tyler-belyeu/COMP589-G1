@@ -13,6 +13,7 @@ import 'package:my_app/models/group.dart';
 import 'package:my_app/services/storage.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class Docs extends StatefulWidget {
   const Docs({super.key});
@@ -26,14 +27,69 @@ class _DocsState extends State<Docs> {
 
   String _groupName = Group.groupName;
   int _numDocuments = 0;
+  var _openResult = 'Unknown';
 
-  bool _fileIsImage(String fileName) {
-    List<String> split = fileName.split(".");
-    if (split.last == "png") {
-      return true;
+  // Set color for supported extensions based on their type,
+  // or set grey for unsupported file types
+  Color _getColor(String extension) {
+    switch (extension) {
+      // Documents
+      case '.pdf':
+      case '.doc':
+      case '.docx':
+        return Colors.red.shade400;
+
+      // Text/Code
+      case '.txt':
+      case '.c':
+      case '.cpp':
+      case '.h':
+      case '.htm':
+      case '.html':
+      case '.java':
+      case '.sh':
+      case '.xml':
+        return Colors.lightGreen;
+
+      // Images
+      case '.png':
+      case '.jpg':
+      case '.jpeg':
+      case '.bmp':
+      case '.gif':
+        return Colors.indigo;
+
+      // Video
+      case '.mp4':
+      case '.m4v':
+      case '.m4u':
+      case '.mpe':
+      case '.mpeg':
+      case '.mpg':
+      case '.mpg4':
+      case '.3gp':
+      case '.asf':
+      case '.avi':
+        return Colors.teal;
+
+      // Audio
+      case '.mp3':
+      case '.mp2':
+      case '.wav':
+      case '.mpga':
+      case '.rmvb':
+      case '.wma':
+      case '.wmv':
+      case '.m3u':
+      case '.m4a':
+      case '.m4b':
+      case '.m4p':
+        return Colors.yellow.shade300;
+
+      // Other/Un-openable
+      default:
+        return Colors.grey;
     }
-
-    return false;
   }
 
   Future<List<Widget>> _getDocuments(String groupId) async {
@@ -43,97 +99,65 @@ class _DocsState extends State<Docs> {
     for (var item in listResult.items) {
       fileNames.add(item.name);
     }
-    print(fileNames);
 
     List<Widget> tiles = [];
     for (var fileName in fileNames) {
-      IconData tileIcon = Icons.description;
-      if (_fileIsImage(fileName)) {
-        tileIcon = Icons.image;
-      }
-      // else if ...
+      List<String> split = fileName.split(".");
+      String extension = split.last;
 
-      GridTile newTile = GridTile(
-        // header: const GridTileBar(backgroundColor: Colors.red),
-        // footer: const GridTileBar(backgroundColor: Colors.red),
-        child: Center(
-          child: SizedBox.fromSize(
-            size: const Size(155, 155),
-            child: ClipRRect(
-                borderRadius: BorderRadius.circular(25.0),
-                child: Material(
-                  color: Colors.black,
-                  child: InkWell(
-                      // splashColor: Colors.white,
-                      onTap: () {
-                        _openFile(fileName);
-                      },
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            tileIcon,
-                            size: 100,
-                            color: Colors.white,
-                          ),
-                          Text(
-                            fileName,
-                            maxLines: 3,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              height: 1,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      )),
-                )),
+      if (split.length == 1) {
+        extension = "file";
+      } else {
+        extension = ".$extension";
+      }
+
+      final color = _getColor(extension);
+
+      InkWell newTile = InkWell(
+        onTap: () {
+          _openFile(fileName);
+        },
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  alignment: Alignment.center,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    extension,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                fileName,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const Text(
+                "",
+                style: TextStyle(fontSize: 24),
+              ),
+            ],
           ),
         ),
       );
 
       tiles.add(newTile);
     }
-
-    GridTile uploadTile = GridTile(
-      child: Center(
-        child: SizedBox.fromSize(
-          size: const Size(155, 155),
-          child: ClipRRect(
-              borderRadius: BorderRadius.circular(25.0),
-              child: Material(
-                color: Colors.white,
-                child: InkWell(
-                    onTap: () async {
-                      final result = await FilePicker.platform.pickFiles();
-                      if (result == null) return;
-
-                      // else upload file
-                      final file = result.files.first;
-                      _uploadFile(file);
-                    },
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(
-                          Icons.upload_file,
-                          size: 100,
-                          color: Colors.black,
-                        ),
-                        Text(
-                          "Upload Document",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              height: 1,
-                              color: Colors.black),
-                        ),
-                      ],
-                    )),
-              )),
-        ),
-      ),
-    );
-    tiles.add(uploadTile);
 
     return tiles;
   }
@@ -171,8 +195,12 @@ class _DocsState extends State<Docs> {
     }
 
     print('Path: ${file.path}');
-    print('Size: ${await file.length()}');
-    OpenFile.open(file.path);
+    if (await Permission.manageExternalStorage.request().isGranted) {
+      final result = await OpenFile.open(file.path);
+      setState(() {
+        _openResult = "type=${result.type}  message=${result.message}";
+      });
+    }
   }
 
   Future<File?> _downloadFile(String url, String fileName) async {
@@ -199,45 +227,6 @@ class _DocsState extends State<Docs> {
     }
   }
 
-  // void _openFile(String fileName) async {
-  //   // if (await Permission.manageExternalStorage.request().isGranted) {
-  //   final storagePath = "${Group.groupID}/${fileName}";
-  //   final fileRef = Storage().storageRef.child(storagePath);
-
-  //   final appDocDir = await getApplicationDocumentsDirectory();
-  //   final filePath = "${appDocDir.absolute.path}/$storagePath";
-  //   final file = File(filePath);
-  //   print(filePath);
-
-  //   final downloadTask = fileRef.writeToFile(file);
-  //   downloadTask.snapshotEvents.listen((taskSnapshot) {
-  //     switch (taskSnapshot.state) {
-  //       case TaskState.running:
-  //         // TODO: Handle this case.
-  //         print("downloading...");
-  //         break;
-  //       case TaskState.paused:
-  //         // TODO: Handle this case.
-  //         print("paused");
-  //         break;
-  //       case TaskState.success:
-  //         // TODO: Handle this case.
-  //         print("successfully downloaded");
-  //         break;
-  //       case TaskState.canceled:
-  //         // TODO: Handle this case.
-  //         print("canceled");
-  //         break;
-  //       case TaskState.error:
-  //         // TODO: Handle this case.
-  //         print("error");
-  //         break;
-  //     }
-  //   });
-  //   // }
-  //   // OpenFile.open(file.path!);
-  // }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -248,6 +237,23 @@ class _DocsState extends State<Docs> {
         title: Text(_groupName),
         centerTitle: true,
         backgroundColor: Colors.black,
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.remove),
+          ),
+          IconButton(
+            onPressed: () async {
+              final result = await FilePicker.platform.pickFiles();
+              if (result == null) return;
+
+              // else upload file
+              final file = result.files.first;
+              _uploadFile(file);
+            },
+            icon: const Icon(Icons.add),
+          ),
+        ],
       ),
       // body: const Center(
       //   child: Text('Documents Page'),
@@ -260,14 +266,12 @@ class _DocsState extends State<Docs> {
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             return GridView.count(
-              // crossAxisSpacing: 5,
-              // mainAxisSpacing: 5,
               crossAxisCount: 2,
               children: snapshot.data!,
             );
           } else {
             return const Center(
-              child: Text('Documents Page'),
+              child: Text('Upload A Document'),
             );
           }
         },
