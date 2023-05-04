@@ -1,19 +1,18 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:my_app/services/auth.dart';
-import 'package:my_app/services/database.dart';
 import 'package:my_app/user_menu.dart';
 import 'package:my_app/models/group.dart';
 import 'package:my_app/services/storage.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+
+import 'package:my_app/main.dart';
 
 class Docs extends StatefulWidget {
   const Docs({super.key});
@@ -24,10 +23,13 @@ class Docs extends StatefulWidget {
 
 class _DocsState extends State<Docs> {
   final User? user = Auth().currentUser;
+  final TextEditingController _alertDialogController = TextEditingController();
 
   String _groupName = Group.groupName;
   int _numDocuments = 0;
   var _openResult = 'Unknown';
+  bool _deleteMode = false;
+  IconData _deleteButtonIcon = Icons.remove;
 
   // Set color for supported extensions based on their type,
   // or set grey for unsupported file types
@@ -115,7 +117,11 @@ class _DocsState extends State<Docs> {
 
       InkWell newTile = InkWell(
         onTap: () {
-          _openFile(fileName);
+          if (_deleteMode) {
+            _alertConfirmDelete(fileName, Group.groupName);
+          } else {
+            _openFile(fileName);
+          }
         },
         child: Container(
           padding: const EdgeInsets.all(8),
@@ -178,8 +184,12 @@ class _DocsState extends State<Docs> {
     try {
       await fileRef.putFile(uploadFile);
     } on FirebaseException catch (e) {
-      // ...
+      print(e);
     }
+
+    setState(() {
+      _numDocuments++;
+    });
   }
 
   Future _openFile(String fileName) async {
@@ -227,6 +237,56 @@ class _DocsState extends State<Docs> {
     }
   }
 
+  void _alertConfirmDelete(String fileName, String groupName) {
+    showDialog(
+      context: navigatorKey.currentContext!,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm Delete"),
+        content: Text("Delete $fileName from Group $groupName?"),
+        actions: [
+          MaterialButton(
+            color: Colors.black,
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pop(context);
+              _alertDialogController.text = '';
+
+              setState(() {
+                _deleteMode = false;
+              });
+            },
+            child: const Text('Cancel'),
+          ),
+          MaterialButton(
+            color: Colors.red,
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteFile(fileName);
+              _alertDialogController.text = '';
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteFile(String fileName) async {
+    final storagePath = "${Group.groupID}/${fileName}";
+    final fileRef = Storage().storageRef.child(storagePath);
+
+    try {
+      await fileRef.delete();
+    } on FirebaseException catch (e) {
+      print(e);
+    }
+
+    // setState(() {
+    //   _deleteMode = false;
+    // });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -239,8 +299,19 @@ class _DocsState extends State<Docs> {
         backgroundColor: Colors.black,
         actions: [
           IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.remove),
+            onPressed: () {
+              setState(() {
+                _deleteMode = !_deleteMode;
+                if (_deleteMode) {
+                  _deleteButtonIcon = Icons.remove_circle;
+                } else {
+                  _deleteButtonIcon = Icons.remove;
+                }
+              });
+            },
+            icon: Icon(_deleteButtonIcon),
+            highlightColor: Colors.transparent,
+            splashColor: Colors.transparent,
           ),
           IconButton(
             onPressed: () async {
@@ -252,23 +323,25 @@ class _DocsState extends State<Docs> {
               _uploadFile(file);
             },
             icon: const Icon(Icons.add),
+            highlightColor: Colors.transparent,
+            splashColor: Colors.transparent,
           ),
         ],
       ),
-      // body: const Center(
-      //   child: Text('Documents Page'),
-      // body: GridView.count(
-      //   crossAxisCount: 2,
-      //   children: const [],
-      // ),
       body: FutureBuilder(
         future: _getDocuments(_groupName),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            return GridView.count(
-              crossAxisCount: 2,
-              children: snapshot.data!,
-            );
+            if (snapshot.data! != []) {
+              return GridView.count(
+                crossAxisCount: 2,
+                children: snapshot.data!,
+              );
+            } else {
+              return const Center(
+                child: Text('Upload A Document'),
+              );
+            }
           } else {
             return const Center(
               child: Text('Upload A Document'),
