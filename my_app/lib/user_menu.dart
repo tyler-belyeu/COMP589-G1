@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_app/main.dart';
 import 'package:my_app/services/auth.dart';
 import 'package:my_app/services/database.dart';
+import 'package:my_app/models/group.dart';
 
 // Disables over-scroll glow effect that normally happens
 // when you try to scroll past the end of a list view
@@ -15,21 +16,19 @@ class NoGlow extends ScrollBehavior {
 }
 
 class UserMenu extends StatefulWidget {
-  UserMenu({super.key});
+  // UserMenu({super.key});
+
+  Function() notifyScreen;
+  UserMenu({super.key, required this.notifyScreen});
 
   @override
-  State<UserMenu> createState() => _UserMenuState();
+  State<UserMenu> createState() => UserMenuState();
 }
 
-class _UserMenuState extends State<UserMenu> {
-  String _currentGroup = 'Group';
-  int _numGroups = 0;
+class UserMenuState extends State<UserMenu> {
+  int _numGroups = 0; // used to refresh menu on group addition
 
   final TextEditingController _alertDialogController = TextEditingController();
-
-  String getCurrentGroup() {
-    return _currentGroup;
-  }
 
   final User? user = Auth().currentUser;
 
@@ -117,10 +116,12 @@ class _UserMenuState extends State<UserMenu> {
     );
   }
 
-  void _tileTapped(String name) {
+  void _tileTapped(String name, String id) {
     setState(() {
-      _currentGroup = name;
+      Group.groupName = name;
+      Group.groupID = id;
     });
+    widget.notifyScreen();
   }
 
   Future<void> _createNewGroup() async {
@@ -144,6 +145,7 @@ class _UserMenuState extends State<UserMenu> {
     List<ListTile> groupTiles = [];
     for (int i = 0; i < groups.length; i++) {
       String groupName = await db.getGroupsData(groups[i], 'name');
+      String groupID = groups[i];
       ListTile tile = ListTile(
         leading: const Icon(
           Icons.group,
@@ -154,7 +156,7 @@ class _UserMenuState extends State<UserMenu> {
           style: const TextStyle(fontSize: 24.0),
         ),
         onTap: () {
-          _tileTapped(groupName);
+          _tileTapped(groupName, groupID);
         },
       );
       groupTiles.add(tile);

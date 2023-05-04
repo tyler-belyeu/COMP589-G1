@@ -34,8 +34,12 @@ class DatabaseService {
   Future<dynamic> getGroupsData(String groupID, String key) async {
     return groupCollection.doc(groupID).get().then(
       (DocumentSnapshot doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return data[key];
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          return data[key];
+        } else {
+          return [];
+        }
       },
       onError: (e) => print("Error getting document: $e"),
     );
