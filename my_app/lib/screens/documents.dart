@@ -332,14 +332,14 @@ class _DocsState extends State<Docs> {
         future: _getDocuments(_groupName),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            if (snapshot.data! != []) {
+            if (snapshot.data!.isEmpty) {
+              return const Center(
+                child: Text('Upload A Document'),
+              );
+            } else {
               return GridView.count(
                 crossAxisCount: 2,
                 children: snapshot.data!,
-              );
-            } else {
-              return const Center(
-                child: Text('Upload A Document'),
               );
             }
           } else {
