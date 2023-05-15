@@ -48,13 +48,14 @@ dependencies:
   firebase_auth: ^4.2.10
   google_sign_in: ^6.0.2
   firebase_storage: ^11.1.1
-  firebase_app_check: ^0.1.2+2
   open_file: ^3.3.1
   path_provider: ^2.0.14
   dio: ^5.1.1
   file_picker: ^5.2.11
   permission_handler: ^10.2.0
   dart_code_metrics: ^5.7.2
+  grouped_list: ^5.1.2
+  intl: ^0.17.0
 
 dev_dependencies:
   flutter_test:

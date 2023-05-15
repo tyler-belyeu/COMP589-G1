@@ -209,30 +209,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.2.11"
-  firebase_app_check:
-    dependency: "direct main"
-    description:
-      name: firebase_app_check
-      sha256: "3eeb82384a5ae412c9014abcb690bf297135fb6af917afc1899d43aa35b9ae68"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.1.2+2"
-  firebase_app_check_platform_interface:
-    dependency: transitive
-    description:
-      name: firebase_app_check_platform_interface
-      sha256: a16d2c0c74d5ca3f677c6277f51fa883d6fab9ddf8cd0cad8ec99975138ca4a0
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.6+1"
-  firebase_app_check_web:
-    dependency: transitive
-    description:
-      name: firebase_app_check_web
-      sha256: d2e95293f24fff577d3959fee80a5c210dd0479af2b4900d1070beb8e187ed04
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.8+1"
   firebase_auth:
     dependency: "direct main"
     description:
@@ -400,6 +376,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.11.0+2"
+  grouped_list:
+    dependency: "direct main"
+    description:
+      name: grouped_list
+      sha256: fef106470186081c32636aa055492eee7fc7fe8bf0921a48d31ded24821af19f
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.1.2"
   html:
     dependency: transitive
     description:
@@ -425,7 +409,7 @@ packages:
     source: hosted
     version: "4.0.2"
   intl:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: intl
       sha256: "910f85bce16fb5c6f614e117efa303e85a1731bb0081edf3604a2ae6e9a3cc91"
