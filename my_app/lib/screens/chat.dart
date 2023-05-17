@@ -26,9 +26,10 @@ class _ChatState extends State<Chat> {
   final TextEditingController _controller = TextEditingController();
 
   Future<List<Message>> _getMessages(String groupID) async {
-    DatabaseService db = DatabaseService(uid: user!.uid);
-    List<Message> messages = await db.getGroupMessages(groupID);
-    return messages;
+    // DatabaseService db = DatabaseService(uid: user!.uid);
+    // List<Message> messages = await db.getGroupMessages(groupID);
+    // return messages;
+    return [];
   }
 
   String _userPhotoURL() {

@@ -45,4 +45,4 @@ app.*.map.json
 
 /metrics/
 
-debug.keystore
+android/debug.keystore

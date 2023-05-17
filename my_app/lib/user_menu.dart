@@ -27,6 +27,7 @@ class UserMenu extends StatefulWidget {
 
 class UserMenuState extends State<UserMenu> {
   int _numGroups = 0; // used to refresh menu on group addition
+  bool _loggedIn = false;
 
   final TextEditingController _alertDialogController = TextEditingController();
 
@@ -69,6 +70,9 @@ class UserMenuState extends State<UserMenu> {
         title: const Text("Sign in with Google"),
         onTap: () {
           signInWithGoogle();
+          setState(() {
+            _loggedIn = true;
+          });
         });
   }
 
@@ -78,6 +82,9 @@ class UserMenuState extends State<UserMenu> {
         title: const Text("Sign Out"),
         onTap: () {
           signOut();
+          setState(() {
+            _loggedIn = false;
+          });
         });
   }
 
