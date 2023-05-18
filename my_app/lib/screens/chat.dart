@@ -1,12 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:grouped_list/grouped_list.dart';
+import 'package:my_app/main.dart';
 import 'package:my_app/models/group.dart';
 import 'package:my_app/models/message.dart';
 import 'package:my_app/services/auth.dart';
 import 'package:my_app/services/database.dart';
 import 'package:my_app/user_menu.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
 
 class Chat extends StatefulWidget {
   Chat({super.key});
@@ -18,18 +20,17 @@ class Chat extends StatefulWidget {
 class _ChatState extends State<Chat> {
   final User? user = Auth().currentUser;
   String _groupName = Group.groupName;
+  String _groupID = Group.groupID;
 
   List<Message> _messages = [];
-  // [
-  //   Message(text: "Example message", date: DateTime.now(), uid: ""),
-  // ];
   final TextEditingController _controller = TextEditingController();
 
   Future<List<Message>> _getMessages(String groupID) async {
-    // DatabaseService db = DatabaseService(uid: user!.uid);
-    // List<Message> messages = await db.getGroupMessages(groupID);
-    // return messages;
-    return [];
+    if (groupID == "") return [];
+
+    DatabaseService db = DatabaseService(uid: user!.uid);
+    List<Message> messages = await db.getGroupMessages(groupID);
+    return messages;
   }
 
   String _userPhotoURL() {
@@ -37,10 +38,23 @@ class _ChatState extends State<Chat> {
         "https://upload.wikimedia.org/wikipedia/commons/c/cc/CSUN_Seal.png";
   }
 
+  void _alertCopyGroupID() {
+    showDialog(
+      context: navigatorKey.currentContext!,
+      builder: (context) => AlertDialog(
+        title: Text("Copied Group ID: \n$_groupID"),
+      ),
+    );
+  }
+
+  void _copyGroupID() async {
+    await Clipboard.setData(ClipboardData(text: _groupID));
+    _alertCopyGroupID();
+  }
+
   refreshTitle() {
     setState(() {
       _groupName = Group.groupName;
-      // _messages = _getMessages(Group.groupID);
     });
   }
 
@@ -54,6 +68,14 @@ class _ChatState extends State<Chat> {
           title: Text(_groupName),
           centerTitle: true,
           backgroundColor: Colors.black,
+            actions: [
+              IconButton(
+                onPressed: _copyGroupID,
+                icon: const Icon(Icons.person_add),
+                highlightColor: Colors.transparent,
+                splashColor: Colors.transparent,
+              ),
+            ],
         ),
         body: FutureBuilder(
           future: _getMessages(Group.groupID),
@@ -207,34 +229,6 @@ class _ChatState extends State<Chat> {
             }
           },
         )
-        // const Center(
-        //   child: Text('Chat Page'),
-        // ),
         );
   }
 }
-
-// return Row(
-//                   mainAxisAlignment: message.sentByMe
-//                       ? MainAxisAlignment.end
-//                       : MainAxisAlignment.start,
-//                   children: [
-//                     ClipOval(
-//                       child: Image.network(
-//                         _userPhotoURL(),
-//                         width: 35,
-//                         height: 35,
-//                         fit: BoxFit.cover,
-//                       ),
-//                     ),
-//                     Card(
-//                       elevation: 8,
-//                       child: Padding(
-//                         padding: const EdgeInsets.all(12),
-//                         child: ConstrainedBox(
-//                             constraints: const BoxConstraints(maxWidth: 150),
-//                             child: Text(message.text)),
-//                       ),
-//                     ),
-//                   ],
-//                 );

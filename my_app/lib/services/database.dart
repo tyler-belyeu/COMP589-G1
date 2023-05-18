@@ -53,29 +53,56 @@ class DatabaseService {
     // Get data from docs and convert map to List
     final messages = querySnapshot.docs.map((doc) => doc.data()).toList();
 
-    // print(messages);
-    List<Message> list = [];
+    // Convert list of JSON objects from firebase into list of Message objects
+    List<Message> messageList = [];
     for (var message in messages) {
       var msg = message as Map<String, dynamic>;
+
       var text = msg["text"];
-      Timestamp timestamp = msg["timestamp"];
+      var timestamp = msg["timestamp"];
       var date = timestamp.toDate();
       var uid = msg["userID"];
+
       var newMessage = Message(text: text, date: date, uid: uid);
-      list.add(newMessage);
+      messageList.add(newMessage);
     }
 
-    list.sort((a, b) {
+    // Sort list in chronological order
+    messageList.sort((a, b) {
       var adate = a.date;
       var bdate = b.date;
       return adate.compareTo(bdate);
     });
 
-    for (var message in list) {
-      print("${message.text}, sent at ${message.date} by ${message.uid}");
-    }
+    return messageList;
+  }
 
-    return list;
+  Future<List<String>> getGroupIDs() async {
+    List<String> groupIDS = [];
+    await groupCollection.get().then((snapshot) {
+      snapshot.docs.forEach((doc) {
+        groupIDS.add(doc.id);
+      });
+    });
+    return groupIDS;
+  }
+  
+  Future addUserToGroup(String groupID, String userID) async
+  {
+    DocumentReference doc = await groupCollection.doc(groupID);
+    var userList = [];
+    await doc.get().then((snapshot) {
+      if (snapshot.exists)
+        {
+          final data = snapshot.data() as Map<String, dynamic>;
+          userList = data['users'];
+        }
+    });
+    userList.add(userID);
+
+    doc.update(<String, dynamic>{
+      'users': userList,
+    });
   }
 
   Future<dynamic> getGroupsData(String groupID, String key) async {

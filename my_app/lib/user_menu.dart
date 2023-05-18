@@ -92,7 +92,7 @@ class UserMenuState extends State<UserMenu> {
     showDialog(
       context: navigatorKey.currentContext!,
       builder: (context) => AlertDialog(
-        title: const Text("Enter Group Name:"),
+        title: const Text("Enter Group Name"),
         content: TextField(
           onChanged: (value) {},
           controller: _alertDialogController,
@@ -123,6 +123,50 @@ class UserMenuState extends State<UserMenu> {
     );
   }
 
+  void _alertJoinGroup() {
+    showDialog(
+      context: navigatorKey.currentContext!,
+      builder: (context) => AlertDialog(
+        title: const Text("Enter Group ID"),
+        content: TextField(
+          onChanged: (value) {},
+          controller: _alertDialogController,
+          decoration: const InputDecoration(hintText: "Group ID"),
+        ),
+        actions: [
+          MaterialButton(
+            color: Colors.red,
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pop(context);
+              _alertDialogController.text = '';
+            },
+            child: const Text('Cancel'),
+          ),
+          MaterialButton(
+            color: Colors.black,
+            textColor: Colors.white,
+            onPressed: () {
+              Navigator.pop(context);
+              _joinGroup(_alertDialogController.text);
+              _alertDialogController.text = '';
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _alertJoinGroupFailed() {
+    showDialog(
+      context: navigatorKey.currentContext!,
+      builder: (context) => AlertDialog(
+        title: const Text("Invalid Group ID"),
+        ),
+    );
+  }
+
   void _tileTapped(String name, String id) {
     setState(() {
       Group.groupName = name;
@@ -137,12 +181,30 @@ class UserMenuState extends State<UserMenu> {
     String groupID =
         await db.createGroup(user!.uid, _alertDialogController.text, usersList);
     List groups = await db.getUserData("groups");
-    // now append groupID to user's groupsList and updateUserData()
     groups.add(groupID);
     db.updateUserData(groups);
     setState(() {
       _numGroups += 1;
     });
+  }
+
+  Future<void> _joinGroup(String groupID) async {
+    DatabaseService db = DatabaseService(uid: user!.uid);
+    List<String> groupIDs = await db.getGroupIDs();
+
+    if (groupIDs.contains(groupID)) {
+      await db.addUserToGroup(groupID, user!.uid);
+
+      List groups = await db.getUserData("groups");
+      groups.add(groupID);
+      db.updateUserData(groups);
+      setState(() {
+        _numGroups += 1;
+      });
+    }
+    else {
+      _alertJoinGroupFailed();
+    }
   }
 
   Future<List<Widget>> _getGroupTiles() async {
@@ -182,8 +244,22 @@ class UserMenuState extends State<UserMenu> {
     );
     groupTiles.add(createNewGroupTile);
 
+    ListTile joinGroupTile = ListTile(
+      leading: const Icon(
+        Icons.add,
+        color: Colors.black,
+      ),
+      title: const Text(
+        "Join Group",
+        style: TextStyle(fontSize: 24.0),
+      ),
+      onTap: _alertJoinGroup,
+    );
+    groupTiles.add(joinGroupTile);
+
     return groupTiles;
   }
+
 
   Drawer _loggedInDrawer() {
     return Drawer(
