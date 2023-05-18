@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:my_app/models/link.dart';
 import 'package:my_app/models/message.dart';
 
 class DatabaseService {
@@ -77,6 +78,49 @@ class DatabaseService {
     return messageList;
   }
 
+  Future createLink(
+      String groupID, String url, DateTime date, String uid) async {
+    DocumentReference doc = await groupCollection
+        .doc(groupID)
+        .collection("links")
+        .add({'url': url, 'userID': uid, 'timestamp': date});
+  }
+
+  Future<dynamic> getGroupLinks(String groupID) async {
+    if (groupID == "") groupID = "COMP 589";
+    final CollectionReference linkCollection =
+    FirebaseFirestore.instance.collection("groups/$groupID/links");
+
+    // Get docs from collection reference
+    QuerySnapshot querySnapshot = await linkCollection.get();
+
+    // Get data from docs and convert map to List
+    final links = querySnapshot.docs.map((doc) => doc.data()).toList();
+
+    // Convert list of JSON objects from firebase into list of Message objects
+    List<Link> linkList = [];
+    for (var link in links) {
+      var l = link as Map<String, dynamic>;
+
+      var url = l["url"];
+      var timestamp = l["timestamp"];
+      var date = timestamp.toDate();
+      var uid = l["userID"];
+
+      var newLink = Link(url: url, date: date, uid: uid);
+      linkList.add(newLink);
+    }
+
+    // Sort list in chronological order
+    linkList.sort((a, b) {
+      var adate = a.date;
+      var bdate = b.date;
+      return adate.compareTo(bdate);
+    });
+
+    return linkList;
+  }
+
   Future<List<String>> getGroupIDs() async {
     List<String> groupIDS = [];
     await groupCollection.get().then((snapshot) {
@@ -86,17 +130,15 @@ class DatabaseService {
     });
     return groupIDS;
   }
-  
-  Future addUserToGroup(String groupID, String userID) async
-  {
+
+  Future addUserToGroup(String groupID, String userID) async {
     DocumentReference doc = await groupCollection.doc(groupID);
     var userList = [];
     await doc.get().then((snapshot) {
-      if (snapshot.exists)
-        {
-          final data = snapshot.data() as Map<String, dynamic>;
-          userList = data['users'];
-        }
+      if (snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>;
+        userList = data['users'];
+      }
     });
     userList.add(userID);
 

@@ -53,9 +53,10 @@ dependencies:
   dio: ^5.1.1
   file_picker: ^5.2.11
   permission_handler: ^10.2.0
-  dart_code_metrics: ^5.7.2
+  dart_code_metrics: ^5.7.4
   grouped_list: ^5.1.2
   intl: ^0.17.0
+  any_link_preview: ^3.0.0
 
 dev_dependencies:
   flutter_test:
